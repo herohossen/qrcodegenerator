@@ -1,69 +1,113 @@
-document.getElementById("generateBtn").addEventListener("click", generateQRCode);
-document.getElementById("qrInput").addEventListener("keydown", function(event) {
-  if (event.key === "Enter") {
-    generateQRCode();
-  }
-});
+// Elements
+const qrInput = document.getElementById("qrInput");
+const generateBtn = document.getElementById("generateBtn");
+const downloadBtn = document.getElementById("downloadBtn");
+const logoUpload = document.getElementById("logoUpload");
+const qrcodeContainer = document.getElementById("qrcode");
 
-document.getElementById("logoUpload").addEventListener("change", function(event) {
-  var file = event.target.files[0];
-  if (file) {
-    var reader = new FileReader();
-    reader.onload = function(e) {
-      window.logoImage = new Image();
-      window.logoImage.src = e.target.result;
-    };
-    reader.readAsDataURL(file);
-  }
-});
+// Function to generate QR Code
+generateBtn.addEventListener("click", () => {
+  const qrText = qrInput.value.trim();
 
-function generateQRCode() {
-  var inputText = document.getElementById("qrInput").value;
-
-  if (inputText.trim() === "") {
-    alert("Please enter text or URL.");
+  if (qrText === "") {
+    alert("Please enter text or URL to generate the QR Code.");
     return;
   }
 
-  // Clear any previous QR code and logo
-  document.getElementById("qrcode").innerHTML = "";
+  // Clear previous QR code
+  qrcodeContainer.innerHTML = "";
 
-  // Generate the QR code using the input text
-  var qrcode = new QRCode(document.getElementById("qrcode"), {
-    text: inputText,
+  // Generate QR code with black foreground and white background
+  new QRCode(qrcodeContainer, {
+    text: qrText,
     width: 200,
     height: 200,
-    correctLevel: QRCode.CorrectLevel.H,
-    callback: function() {
-      var canvas = document.querySelector("#qrcode canvas");
-      if (canvas && window.logoImage) {
-        overlayLogo(canvas);
-      }
-    }
+    correctLevel: QRCode.CorrectLevel.L,
+    colorDark: "#000000", // Black foreground
+    colorLight: "#ffffff", // White background
   });
 
-  // Enable the download button once the QR code is generated
-  setTimeout(function() {
-    var canvas = document.querySelector("#qrcode canvas");
-    if (canvas) {
-      var downloadBtn = document.getElementById("downloadBtn");
-      downloadBtn.classList.remove("hidden");
+  // Show the download button
+  downloadBtn.classList.remove("hidden");
+});
 
-      // Set the download URL and filename
-      downloadBtn.href = canvas.toDataURL("image/png");
-      downloadBtn.download = "qrcode_with_logo.png";  // Set default download filename
-    }
-  }, 500);  // Give some time for the QR code to be rendered
-}
+// Function to handle QR Code download
+downloadBtn.addEventListener("click", () => {
+  const qrCanvas = qrcodeContainer.querySelector("canvas");
+  if (!qrCanvas) {
+    alert("Please generate the QR Code first!");
+    return;
+  }
 
-function overlayLogo(canvas) {
-  var ctx = canvas.getContext("2d");
+  // Create a new canvas with white background
+  const canvas = document.createElement("canvas");
+  const context = canvas.getContext("2d");
+  const qrWidth = qrCanvas.width;
+  const qrHeight = qrCanvas.height;
 
-  // Resize the logo to fit into the center of the QR code
-  var logoSize = 50;
-  var logoX = (canvas.width - logoSize) / 2;
-  var logoY = (canvas.height - logoSize) / 2;
+  canvas.width = qrWidth;
+  canvas.height = qrHeight;
 
-  // Draw the logo on the canvas
-  ctx.drawImage(window.logoImage, logoX, logoY, logoSize, logoSize);
+  // Fill the canvas with a white background
+  context.fillStyle = "#ffffff"; // White background
+  context.fillRect(0, 0, qrWidth, qrHeight);
+
+  // Draw the QR code onto the new canvas
+  context.drawImage(qrCanvas, 0, 0);
+
+  // Add logo if uploaded
+  if (logoUpload.files.length > 0) {
+    const logo = logoUpload.files[0];
+    const reader = new FileReader();
+
+    reader.onload = (event) => {
+      const logoImg = new Image();
+      logoImg.src = event.target.result;
+
+      logoImg.onload = () => {
+        const logoSize = qrWidth / 5; // Logo is 1/5th of the QR code width
+        const logoX = (qrWidth - logoSize) / 2;
+        const logoY = (qrHeight - logoSize) / 2;
+
+        // Draw the logo on top of the QR code
+        context.drawImage(logoImg, logoX, logoY, logoSize, logoSize);
+
+        // Trigger download
+        triggerDownload(canvas);
+      };
+    };
+
+    reader.readAsDataURL(logo);
+  } else {
+    // Trigger download directly if no logo is uploaded
+    triggerDownload(canvas);
+  }
+});
+
+// Function to trigger download
+function triggerDownload(canvas) {
+  const now = new Date();
+  const timestamp = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, "0")}${String(now.getDate()).padStart(2, "0")}_${String(now.getHours()).padStart(2, "0")}${String(now.getMinutes()).padStart(2, "0")}${String(now.getSeconds()).padStart(2, "0")}${now.getMilliseconds()}`;
+  const filename = `qrcode_${timestamp}.jpg`;
+
+  if (canvas.toBlob) {
+    // Use toBlob for modern browsers
+    canvas.toBlob(
+      (blob) => {
+        const link = document.createElement("a");
+        link.href = URL.createObjectURL(blob);
+        link.download = filename;
+        link.click();
+      },
+      "image/jpeg",
+      1.0 // Quality (1.0 = maximum)
+    );
+  } else {
+    // Fallback to toDataURL for older browsers
+    const dataUrl = canvas.toDataURL("image/jpeg", 1.0);
+    const link = document.createElement("a");
+    link.href = dataUrl;
+    link.download = filename;
+    link.click();
+  }
 }
