@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>QR Code Generator</title>
+  <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+  <div class="container">
+    <!-- Input and Button Section -->
+    <div class="controls">
+      <h1>QR Code Generator</h1>
+      <textarea id="qrInput" placeholder="Enter text or URL here..." rows="4"></textarea>
+      <button id="generateBtn">Generate QR Code</button>
+
+      <!-- Logo Upload Section -->
+      <input type="file" id="logoUpload" accept="image/*" />
+      <a id="downloadBtn" class="hidden" href="#" download="qrcode.png">Download QR Code</a>
+    </div>
+
+    <!-- QR Code Section -->
+    <div class="qr-container">
+      <div id="qrcode"></div>
+    </div>
+  </div>
+
+  <!-- Footer Section -->
+  <footer>
+    <p>Developed by Md. Delowar Hossen</p>
+  </footer>
+
+  <!-- Add QRCode.js -->
+  <script src="https://cdn.jsdelivr.net/gh/davidshimjs/qrcodejs/qrcode.min.js"></script>
+  <script src="./script.js"></script>
+</body>
+</html>
